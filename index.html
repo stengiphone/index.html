@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ML Coach Pro v1.1</title>
+
+<style>
+:root{
+    --bg:#0b1020;
+    --card:rgba(255,255,255,0.06);
+    --text:#fff;
+    --muted:#94a3b8;
+    --blue:#4f46e5;
+    --purple:#a855f7;
+    --red:#ef4444;
+    --border:rgba(255,255,255,0.1);
+}
+
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial;}
+
+body{
+    background: radial-gradient(circle,#111827,#050814);
+    color:var(--text);
+}
+
+/* SIDEBAR */
+.sidebar{
+    position:fixed;
+    width:240px;
+    height:100%;
+    background:rgba(15,23,42,0.9);
+    padding:20px;
+    border-right:1px solid var(--border);
+}
+
+.sidebar h2{
+    color:var(--purple);
+    margin-bottom:20px;
+}
+
+.nav button{
+    width:100%;
+    margin:5px 0;
+    padding:10px;
+    border-radius:10px;
+    border:1px solid var(--border);
+    background:transparent;
+    color:white;
+    cursor:pointer;
+}
+
+.nav button:hover{
+    background:var(--blue);
+}
+
+/* MAIN */
+.main{
+    margin-left:260px;
+    padding:20px;
+}
+
+.card{
+    background:var(--card);
+    padding:15px;
+    margin:10px 0;
+    border-radius:15px;
+    border:1px solid var(--border);
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+    gap:10px;
+}
+
+.primary{
+    background:linear-gradient(45deg,var(--blue),var(--purple));
+    color:white;
+    padding:10px;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+}
+
+/* MODAL */
+.modal{
+    position:fixed;
+    top:0;left:0;
+    width:100%;height:100%;
+    background:rgba(0,0,0,0.6);
+    display:none;
+    justify-content:center;
+    align-items:center;
+}
+
+.modal-content{
+    background:#0f172a;
+    padding:20px;
+    border-radius:15px;
+    width:300px;
+}
+
+input,select{
+    width:100%;
+    padding:10px;
+    margin-top:10px;
+    border-radius:8px;
+    border:1px solid var(--border);
+    background:#111827;
+    color:white;
+}
+</style>
+</head>
+
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+<h2>ML Coach Pro</h2>
+
+<div class="nav">
+<button onclick="show('dashboard')">Dashboard</button>
+<button onclick="show('players')">Players</button>
+</div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+<h1>Dashboard</h1>
+
+<div class="grid">
+<div class="card">
+<h3>Total Players</h3>
+<h1 id="totalPlayers">0</h1>
+</div>
+
+<div class="card">
+<h3>Active Players</h3>
+<h1 id="activePlayers">0</h1>
+</div>
+</div>
+
+</div>
+
+<!-- PLAYERS -->
+<div id="players" style="display:none">
+
+<h1>Players</h1>
+
+<button class="primary" onclick="openModal()">+ Add Player</button>
+
+<div id="list"></div>
+
+</div>
+
+</div>
+
+<!-- MODAL -->
+<div class="modal" id="modal">
+<div class="modal-content">
+
+<h3>Add Player</h3>
+
+<input id="name" placeholder="Player Name">
+
+<select id="role">
+<option>Gold</option>
+<option>Jungle</option>
+<option>Mid</option>
+<option>Roam</option>
+<option>EXP</option>
+</select>
+
+<button class="primary" onclick="addPlayer()">Save</button>
+<button onclick="closeModal()" style="margin-top:10px;width:100%">Cancel</button>
+
+</div>
+</div>
+
+<script>
+
+/* DATA */
+let players = JSON.parse(localStorage.getItem("ml_players")) || [];
+
+/* NAV */
+function show(page){
+    document.querySelectorAll("#dashboard,#players")
+    .forEach(e=>e.style.display="none");
+
+    document.getElementById(page).style.display="block";
+}
+
+/* MODAL */
+function openModal(){
+    document.getElementById("modal").style.display="flex";
+}
+
+function closeModal(){
+    document.getElementById("modal").style.display="none";
+}
+
+/* ADD PLAYER */
+function addPlayer(){
+
+    let name = document.getElementById("name").value;
+    let role = document.getElementById("role").value;
+
+    if(!name) return;
+
+    players.push({
+        id:Date.now(),
+        name,
+        role,
+        status:"Active"
+    });
+
+    localStorage.setItem("ml_players",JSON.stringify(players));
+
+    render();
+    update();
+    closeModal();
+}
+
+/* DELETE */
+function deletePlayer(id){
+    players = players.filter(p=>p.id!==id);
+    localStorage.setItem("ml_players",JSON.stringify(players));
+    render();
+    update();
+}
+
+/* RENDER */
+function render(){
+
+    let html="";
+
+    players.forEach(p=>{
+        html += `
+        <div class="card">
+            <h3>${p.name}</h3>
+            <p>${p.role}</p>
+            <button onclick="deletePlayer(${p.id})"
+            style="background:red;color:white;border:none;padding:5px;border-radius:5px">
+            Delete
+            </button>
+        </div>`;
+    });
+
+    document.getElementById("list").innerHTML = html;
+}
+
+/* DASHBOARD */
+function update(){
+    document.getElementById("totalPlayers").innerText = players.length;
+    document.getElementById("activePlayers").innerText = players.length;
+}
+
+/* INIT */
+render();
+update();
+show("dashboard");
+
+</script>
+
+</body>
+</html>
