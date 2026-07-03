@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ML Coach Pro v1.3</title>
+<title>ML Coach Pro v1.4</title>
 
 <style>
 :root{
@@ -45,9 +45,9 @@ body{
     border:1px solid var(--border);
     background:transparent;
     color:white;
+    cursor:pointer;
 }
 
-/* MAIN */
 .main{
     margin-left:260px;
     padding:20px;
@@ -86,18 +86,16 @@ input,select{
 
 <!-- SIDEBAR -->
 <div class="sidebar">
-<h2>ML Coach Pro v1.3</h2>
+<h2>ML Coach Pro v1.4</h2>
 
 <div class="nav">
 <button onclick="show('dashboard')">Dashboard</button>
 <button onclick="show('players')">Players</button>
-<button onclick="show('matches')">Matches</button>
-<button onclick="show('scrims')">Scrims</button>
-<button onclick="show('notes')">Coach Notes</button>
+<button onclick="show('tournament')">Tournament</button>
+<button onclick="show('ranking')">Ranking</button>
 </div>
 </div>
 
-<!-- MAIN -->
 <div class="main">
 
 <!-- DASHBOARD -->
@@ -110,8 +108,8 @@ input,select{
 </div>
 
 <div class="card">
-<h3>Total Matches</h3>
-<h1 id="totalMatches">0</h1>
+<h3>Tournaments</h3>
+<h1 id="totalTournaments">0</h1>
 </div>
 
 <div class="card">
@@ -136,180 +134,169 @@ input,select{
 
 <button class="primary" onclick="addPlayer()">Add Player</button>
 
-<div id="playerList"></div>
+<div id="list"></div>
 </div>
 
-<!-- MATCHES -->
-<div id="matches" style="display:none">
-<h1>Match History</h1>
+<!-- TOURNAMENT -->
+<div id="tournament" style="display:none">
+<h1>Tournament</h1>
 
 <div class="card">
-<input id="opponent" placeholder="Opponent Team">
-<input id="score" placeholder="Score (e.g 2-1)">
+<input id="tName" placeholder="Tournament Name">
+<input id="tPrize" placeholder="Prize Pool">
 
-<select id="result">
-<option>Win</option>
-<option>Lose</option>
-</select>
-
-<button class="primary" onclick="addMatch()">Save Match</button>
+<button class="primary" onclick="addTournament()">Add Tournament</button>
 </div>
 
-<div id="matchList"></div>
+<div id="tList"></div>
 </div>
 
-<!-- SCRIMS -->
-<div id="scrims" style="display:none">
-<h1>Scrims</h1>
+<!-- RANKING -->
+<div id="ranking" style="display:none">
+<h1>Ranking (Auto Sorted)</h1>
 
-<div class="card">
-<input id="scrimTeam" placeholder="Team Name">
-<input id="scrimDate" type="date">
-
-<button class="primary" onclick="addScrim()">Add Scrim</button>
-</div>
-
-<div id="scrimList"></div>
-</div>
-
-<!-- NOTES -->
-<div id="notes" style="display:none">
-<h1>Coach Notes</h1>
-
-<div class="card">
-<textarea id="noteText" style="width:100%;height:120px;background:#111827;color:white;border-radius:10px;"></textarea>
-<button class="primary" onclick="saveNote()">Save Notes</button>
-</div>
-
-<div class="card">
-<p id="savedNote"></p>
-</div>
+<div id="rankList"></div>
 </div>
 
 </div>
 
 <script>
 
-/* DATA */
-let players = JSON.parse(localStorage.getItem("v3_players")) || [];
-let matches = JSON.parse(localStorage.getItem("v3_matches")) || [];
-let scrims = JSON.parse(localStorage.getItem("v3_scrims")) || [];
-let note = localStorage.getItem("v3_notes") || "";
+/* STORAGE */
+let players = JSON.parse(localStorage.getItem("v4_players")) || [];
+let tournaments = JSON.parse(localStorage.getItem("v4_tournaments")) || [];
+
+/* HERO POOL */
+let heroes = ["Lancelot","Fanny","Ling","Aldous","Hayabusa","Beatrix","Claude","Valentina"];
 
 /* NAV */
 function show(page){
-    document.querySelectorAll("#dashboard,#players,#matches,#scrims,#notes")
+    document.querySelectorAll("#dashboard,#players,#tournament,#ranking")
     .forEach(e=>e.style.display="none");
+
     document.getElementById(page).style.display="block";
 }
 
-/* PLAYERS */
+/* ADD PLAYER */
 function addPlayer(){
+
     let name=document.getElementById("name").value;
     let role=document.getElementById("role").value;
+
     if(!name) return;
 
-    players.push({id:Date.now(),name,role});
+    players.push({
+        id:Date.now(),
+        name,
+        role,
+        wins:Math.floor(Math.random()*30),
+        losses:Math.floor(Math.random()*20),
+        mvp:Math.floor(Math.random()*10),
+        hero:heroes[Math.floor(Math.random()*heroes.length)]
+    });
+
     save();
     renderPlayers();
     update();
 }
 
-function renderPlayers(){
-    document.getElementById("playerList").innerHTML =
-    players.map(p=>`
-        <div class="card">
-            <h3>${p.name}</h3>
-            <p>${p.role}</p>
-            <button onclick="deletePlayer(${p.id})" class="primary" style="background:red">Delete</button>
-        </div>
-    `).join("");
-}
+/* TOURNAMENT */
+function addTournament(){
 
-function deletePlayer(id){
-    players=players.filter(p=>p.id!==id);
-    save();renderPlayers();update();
-}
+    let name=document.getElementById("tName").value;
+    let prize=document.getElementById("tPrize").value;
 
-/* MATCHES */
-function addMatch(){
-    let opponent=document.getElementById("opponent").value;
-    let score=document.getElementById("score").value;
-    let result=document.getElementById("result").value;
+    if(!name) return;
 
-    matches.push({id:Date.now(),opponent,score,result});
+    tournaments.push({
+        id:Date.now(),
+        name,
+        prize
+    });
+
     save();
-    renderMatches();
+    renderTournaments();
     update();
 }
 
-function renderMatches(){
-    document.getElementById("matchList").innerHTML =
-    matches.map(m=>`
+/* RENDER PLAYERS */
+function renderPlayers(){
+
+    let html="";
+
+    players.forEach(p=>{
+
+        let winrate = ((p.wins/(p.wins+p.losses||1))*100).toFixed(1);
+
+        html += `
         <div class="card">
-            <h3>${m.opponent}</h3>
-            <p>${m.score} (${m.result})</p>
+            <h3>${p.name}</h3>
+            <p>${p.role}</p>
+            <p>Hero: ${p.hero}</p>
+            <p>Win Rate: ${winrate}% | MVP: ${p.mvp}</p>
+        </div>`;
+    });
+
+    document.getElementById("list").innerHTML=html;
+}
+
+/* TOURNAMENT */
+function renderTournaments(){
+
+    document.getElementById("tList").innerHTML =
+    tournaments.map(t=>`
+        <div class="card">
+            <h3>${t.name}</h3>
+            <p>Prize: ${t.prize}</p>
         </div>
     `).join("");
 }
 
-/* SCRIMS */
-function addScrim(){
-    let team=document.getElementById("scrimTeam").value;
-    let date=document.getElementById("scrimDate").value;
+/* RANKING */
+function renderRanking(){
 
-    scrims.push({id:Date.now(),team,date});
-    save();
-    renderScrims();
-}
+    let sorted = [...players].sort((a,b)=>{
+        let wa=a.wins/(a.wins+a.losses||1);
+        let wb=b.wins/(b.wins+b.losses||1);
+        return wb-wa;
+    });
 
-function renderScrims(){
-    document.getElementById("scrimList").innerHTML =
-    scrims.map(s=>`
+    document.getElementById("rankList").innerHTML =
+    sorted.map((p,i)=>`
         <div class="card">
-            <h3>${s.team}</h3>
-            <p>${s.date}</p>
+            <h3>#${i+1} ${p.name}</h3>
+            <p>Win Rate: ${((p.wins/(p.wins+p.losses||1))*100).toFixed(1)}%</p>
         </div>
     `).join("");
-}
-
-/* NOTES */
-function saveNote(){
-    let t=document.getElementById("noteText").value;
-    localStorage.setItem("v3_notes",t);
-    document.getElementById("savedNote").innerText=t;
-}
-
-/* SAVE */
-function save(){
-    localStorage.setItem("v3_players",JSON.stringify(players));
-    localStorage.setItem("v3_matches",JSON.stringify(matches));
-    localStorage.setItem("v3_scrims",JSON.stringify(scrims));
 }
 
 /* DASHBOARD */
 function update(){
 
     document.getElementById("totalPlayers").innerText=players.length;
-    document.getElementById("totalMatches").innerText=matches.length;
+    document.getElementById("totalTournaments").innerText=tournaments.length;
 
-    let win = matches.filter(m=>m.result==="Win").length;
-    let rate = matches.length?((win/matches.length)*100).toFixed(1):0;
+    let totalWins = players.reduce((a,b)=>a+b.wins,0);
+    let totalGames = players.reduce((a,b)=>a+b.wins+b.losses,0);
 
-    document.getElementById("winRate").innerText=rate+"%";
+    let winRate = totalGames?((totalWins/totalGames)*100).toFixed(1):0;
+
+    document.getElementById("winRate").innerText=winRate+"%";
+
+    renderRanking();
+}
+
+/* SAVE */
+function save(){
+    localStorage.setItem("v4_players",JSON.stringify(players));
+    localStorage.setItem("v4_tournaments",JSON.stringify(tournaments));
 }
 
 /* INIT */
 renderPlayers();
-renderMatches();
-renderScrims();
+renderTournaments();
 update();
 show("dashboard");
-
-if(note){
-    document.getElementById("savedNote").innerText=note;
-    document.getElementById("noteText").value=note;
-}
 
 </script>
 
