@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ML Coach Pro v1.1</title>
+<title>ML Coach Pro v1.2</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 :root{
@@ -14,6 +16,7 @@
     --blue:#4f46e5;
     --purple:#a855f7;
     --red:#ef4444;
+    --green:#22c55e;
     --border:rgba(255,255,255,0.1);
 }
 
@@ -36,7 +39,6 @@ body{
 
 .sidebar h2{
     color:var(--purple);
-    margin-bottom:20px;
 }
 
 .nav button{
@@ -74,13 +76,26 @@ body{
     gap:10px;
 }
 
+input,select{
+    width:100%;
+    padding:10px;
+    margin:5px 0;
+    border-radius:10px;
+    border:1px solid var(--border);
+    background:#111827;
+    color:white;
+}
+
+button{
+    cursor:pointer;
+}
+
 .primary{
     background:linear-gradient(45deg,var(--blue),var(--purple));
     color:white;
-    padding:10px;
     border:none;
+    padding:10px;
     border-radius:10px;
-    cursor:pointer;
 }
 
 /* MODAL */
@@ -98,26 +113,15 @@ body{
     background:#0f172a;
     padding:20px;
     border-radius:15px;
-    width:300px;
-}
-
-input,select{
-    width:100%;
-    padding:10px;
-    margin-top:10px;
-    border-radius:8px;
-    border:1px solid var(--border);
-    background:#111827;
-    color:white;
+    width:320px;
 }
 </style>
 </head>
 
 <body>
 
-<!-- SIDEBAR -->
 <div class="sidebar">
-<h2>ML Coach Pro</h2>
+<h2>ML Coach Pro v1.2</h2>
 
 <div class="nav">
 <button onclick="show('dashboard')">Dashboard</button>
@@ -125,7 +129,6 @@ input,select{
 </div>
 </div>
 
-<!-- MAIN -->
 <div class="main">
 
 <!-- DASHBOARD -->
@@ -139,9 +142,18 @@ input,select{
 </div>
 
 <div class="card">
-<h3>Active Players</h3>
-<h1 id="activePlayers">0</h1>
+<h3>Team Rating</h3>
+<h1 id="teamRating">0</h1>
 </div>
+
+<div class="card">
+<h3>Avg Winrate</h3>
+<h1 id="avgWinrate">0%</h1>
+</div>
+</div>
+
+<div class="card">
+<canvas id="radar"></canvas>
 </div>
 
 </div>
@@ -150,6 +162,8 @@ input,select{
 <div id="players" style="display:none">
 
 <h1>Players</h1>
+
+<input id="search" placeholder="Search player..." oninput="render()">
 
 <button class="primary" onclick="openModal()">+ Add Player</button>
 
@@ -163,7 +177,7 @@ input,select{
 <div class="modal" id="modal">
 <div class="modal-content">
 
-<h3>Add Player</h3>
+<h3 id="modalTitle">Add Player</h3>
 
 <input id="name" placeholder="Player Name">
 
@@ -175,88 +189,185 @@ input,select{
 <option>EXP</option>
 </select>
 
-<button class="primary" onclick="addPlayer()">Save</button>
-<button onclick="closeModal()" style="margin-top:10px;width:100%">Cancel</button>
+<select id="status">
+<option>Active</option>
+<option>Sub</option>
+<option>Trial</option>
+</select>
+
+<button class="primary" onclick="savePlayer()">Save</button>
+<button onclick="closeModal()" style="width:100%;margin-top:10px">Cancel</button>
 
 </div>
 </div>
 
 <script>
 
-/* DATA */
-let players = JSON.parse(localStorage.getItem("ml_players")) || [];
+let players = JSON.parse(localStorage.getItem("ml_players_v2")) || [];
+let editId = null;
+let chart;
 
 /* NAV */
 function show(page){
     document.querySelectorAll("#dashboard,#players")
     .forEach(e=>e.style.display="none");
-
     document.getElementById(page).style.display="block";
 }
 
 /* MODAL */
-function openModal(){
+function openModal(player=null){
+
     document.getElementById("modal").style.display="flex";
+
+    if(player){
+        document.getElementById("modalTitle").innerText="Edit Player";
+        document.getElementById("name").value=player.name;
+        document.getElementById("role").value=player.role;
+        document.getElementById("status").value=player.status;
+        editId = player.id;
+    }else{
+        document.getElementById("modalTitle").innerText="Add Player";
+        document.getElementById("name").value="";
+        editId = null;
+    }
 }
 
 function closeModal(){
     document.getElementById("modal").style.display="none";
 }
 
-/* ADD PLAYER */
-function addPlayer(){
+/* SAVE PLAYER */
+function savePlayer(){
 
     let name = document.getElementById("name").value;
     let role = document.getElementById("role").value;
+    let status = document.getElementById("status").value;
 
     if(!name) return;
 
-    players.push({
-        id:Date.now(),
-        name,
-        role,
-        status:"Active"
-    });
+    let stats = {
+        winrate: Math.floor(Math.random()*100),
+        mvp: Math.floor(Math.random()*20),
+        kda: Math.floor(Math.random()*10)+1,
+        damage: Math.floor(Math.random()*100),
+        assist: Math.floor(Math.random()*50),
+        death: Math.floor(Math.random()*30)
+    };
 
-    localStorage.setItem("ml_players",JSON.stringify(players));
+    if(editId){
+        players = players.map(p=>{
+            if(p.id===editId){
+                return {...p,name,role,status};
+            }
+            return p;
+        });
+    }else{
 
+        if(players.length >= 7){
+            alert("Max 7 players only!");
+            return;
+        }
+
+        players.push({
+            id:Date.now(),
+            name,role,status,stats
+        });
+    }
+
+    localStorage.setItem("ml_players_v2",JSON.stringify(players));
+
+    closeModal();
     render();
     update();
-    closeModal();
 }
 
 /* DELETE */
-function deletePlayer(id){
+function del(id){
     players = players.filter(p=>p.id!==id);
-    localStorage.setItem("ml_players",JSON.stringify(players));
+    localStorage.setItem("ml_players_v2",JSON.stringify(players));
     render();
     update();
 }
 
-/* RENDER */
+/* SEARCH */
 function render(){
+
+    let keyword = document.getElementById("search").value || "";
 
     let html="";
 
-    players.forEach(p=>{
+    players
+    .filter(p=>p.name.toLowerCase().includes(keyword.toLowerCase()))
+    .forEach(p=>{
+
+        let winrate = p.stats.winrate;
+
         html += `
         <div class="card">
-            <h3>${p.name}</h3>
-            <p>${p.role}</p>
-            <button onclick="deletePlayer(${p.id})"
-            style="background:red;color:white;border:none;padding:5px;border-radius:5px">
+            <h3 onclick="openModal(${JSON.stringify(p).replaceAll('"','&quot;')})" style="cursor:pointer">
+                ${p.name}
+            </h3>
+
+            <p>${p.role} | ${p.status}</p>
+            <p>Winrate: ${winrate}% | KDA: ${p.stats.kda}</p>
+
+            <button onclick="del(${p.id})" style="background:red;color:white;border:none;padding:5px;border-radius:5px">
             Delete
             </button>
         </div>`;
     });
 
-    document.getElementById("list").innerHTML = html;
+    document.getElementById("list").innerHTML=html;
 }
 
-/* DASHBOARD */
+/* UPDATE DASHBOARD */
 function update(){
+
     document.getElementById("totalPlayers").innerText = players.length;
-    document.getElementById("activePlayers").innerText = players.length;
+
+    let avg = players.length
+    ? (players.reduce((a,b)=>a+b.stats.winrate,0)/players.length).toFixed(1)
+    : 0;
+
+    document.getElementById("avgWinrate").innerText = avg+"%";
+
+    let rating = avg * 0.8;
+    document.getElementById("teamRating").innerText = rating.toFixed(1);
+
+    drawRadar();
+}
+
+/* RADAR */
+function drawRadar(){
+
+    let ctx = document.getElementById("radar");
+
+    let avg = {winrate:0,kda:0,damage:0,assist:0,death:0};
+
+    players.forEach(p=>{
+        for(let k in avg){
+            avg[k]+=p.stats[k];
+        }
+    });
+
+    for(let k in avg){
+        avg[k]=players.length?avg[k]/players.length:0;
+    }
+
+    if(chart) chart.destroy();
+
+    chart = new Chart(ctx,{
+        type:"radar",
+        data:{
+            labels:Object.keys(avg),
+            datasets:[{
+                label:"Team Stats",
+                data:Object.values(avg),
+                backgroundColor:"rgba(168,85,247,0.2)",
+                borderColor:"#a855f7"
+            }]
+        }
+    });
 }
 
 /* INIT */
