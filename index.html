@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ML Coach Pro v1.4</title>
+<title>ML Coach Pro v1.5</title>
 
 <style>
 :root{
@@ -14,6 +14,7 @@
     --blue:#4f46e5;
     --purple:#a855f7;
     --gold:#fbbf24;
+    --green:#22c55e;
     --red:#ef4444;
     --border:rgba(255,255,255,0.1);
 }
@@ -79,19 +80,29 @@ input,select{
     border-radius:10px;
     cursor:pointer;
 }
+
+.danger{
+    background:var(--red);
+    color:white;
+    border:none;
+    padding:5px;
+    border-radius:6px;
+    cursor:pointer;
+}
 </style>
 </head>
 
 <body>
 
 <div class="sidebar">
-<h2>ML Coach Pro v1.4</h2>
+<h2>ML Coach Pro v1.5</h2>
 
 <div class="nav">
 <button onclick="show('dashboard')">Dashboard</button>
 <button onclick="show('players')">Players</button>
-<button onclick="show('tournament')">Tournament</button>
-<button onclick="show('ranking')">Ranking</button>
+<button onclick="show('contracts')">Contracts</button>
+<button onclick="show('sponsors')">Sponsors</button>
+<button onclick="show('tools')">Tools</button>
 </div>
 </div>
 
@@ -107,13 +118,13 @@ input,select{
 </div>
 
 <div class="card">
-<h3>Tournaments</h3>
-<h1 id="totalTournaments">0</h1>
+<h3>Total Sponsors</h3>
+<h1 id="totalSponsors">0</h1>
 </div>
 
 <div class="card">
-<h3>Win Rate</h3>
-<h1 id="winRate">0%</h1>
+<h3>Total Salary</h3>
+<h1 id="totalSalary">RM 0</h1>
 </div>
 </div>
 
@@ -131,55 +142,73 @@ input,select{
 <option>EXP</option>
 </select>
 
+<input id="salary" placeholder="Salary (RM)">
+
 <button class="primary" onclick="addPlayer()">Add Player</button>
 
 <div id="list"></div>
 </div>
 
-<!-- TOURNAMENT -->
-<div id="tournament" style="display:none">
-<h1>Tournament</h1>
+<!-- CONTRACTS -->
+<div id="contracts" style="display:none">
+<h1>Contracts</h1>
+
+<div id="contractList"></div>
+</div>
+
+<!-- SPONSORS -->
+<div id="sponsors" style="display:none">
+<h1>Sponsors</h1>
+
+<input id="sName" placeholder="Sponsor Name">
+<input id="sAmount" placeholder="Amount RM">
+
+<button class="primary" onclick="addSponsor()">Add Sponsor</button>
+
+<div id="sponsorList"></div>
+</div>
+
+<!-- TOOLS -->
+<div id="tools" style="display:none">
+
+<h1>Tools</h1>
 
 <div class="card">
-<input id="tName" placeholder="Tournament Name">
-<input id="tPrize" placeholder="Prize Pool">
+<button class="primary" onclick="exportData()">Export Data</button>
 
-<button class="primary" onclick="addTournament()">Add Tournament</button>
+<input type="file" onchange="importData(event)">
 </div>
 
-<div id="tList"></div>
+<div class="card">
+<input id="announcement" placeholder="Write announcement">
+<button class="primary" onclick="addAnnouncement()">Add Announcement</button>
+<button onclick="showAnnouncements()" class="primary">Show Announcements</button>
 </div>
 
-<!-- RANKING -->
-<div id="ranking" style="display:none">
-<h1>Ranking</h1>
-
-<div id="rankList"></div>
 </div>
 
 </div>
 
 <script>
 
-/* STORAGE CLEAN */
-let players = JSON.parse(localStorage.getItem("v4_players")) || [];
-let tournaments = JSON.parse(localStorage.getItem("v4_tournaments")) || [];
-
-/* HERO POOL */
-let heroes = ["Lancelot","Fanny","Ling","Aldous","Hayabusa","Beatrix","Claude","Valentina"];
+/* DATA */
+let players = JSON.parse(localStorage.getItem("v5_players")) || [];
+let sponsors = JSON.parse(localStorage.getItem("v5_sponsors")) || [];
+let announcements = JSON.parse(localStorage.getItem("v5_announcements")) || [];
 
 /* NAV */
 function show(page){
-    document.querySelectorAll("#dashboard,#players,#tournament,#ranking")
+    document.querySelectorAll("#dashboard,#players,#contracts,#sponsors,#tools")
     .forEach(e=>e.style.display="none");
     document.getElementById(page).style.display="block";
 }
 
-/* ADD PLAYER */
+/* PLAYERS */
 function addPlayer(){
 
     let name=document.getElementById("name").value;
     let role=document.getElementById("role").value;
+    let salary=parseFloat(document.getElementById("salary").value||0);
 
     if(!name) return;
 
@@ -187,84 +216,83 @@ function addPlayer(){
         id:Date.now(),
         name,
         role,
-        wins:Math.floor(Math.random()*30),
-        losses:Math.floor(Math.random()*20),
-        mvp:Math.floor(Math.random()*10),
-        hero:heroes[Math.floor(Math.random()*heroes.length)]
+        salary,
+        contract:"Active"
     });
 
     save();
     renderPlayers();
+    renderContracts();
     update();
 }
 
-/* ADD TOURNAMENT */
-function addTournament(){
+/* SPONSORS */
+function addSponsor(){
 
-    let name=document.getElementById("tName").value;
-    let prize=document.getElementById("tPrize").value;
+    let name=document.getElementById("sName").value;
+    let amount=parseFloat(document.getElementById("sAmount").value||0);
 
     if(!name) return;
 
-    tournaments.push({
+    sponsors.push({
         id:Date.now(),
         name,
-        prize
+        amount
     });
 
     save();
-    renderTournaments();
+    renderSponsors();
     update();
 }
 
-/* PLAYERS */
-function renderPlayers(){
+/* CONTRACT TOGGLE */
+function toggleContract(id){
 
-    let html="";
-
-    players.forEach(p=>{
-
-        let winrate = ((p.wins/(p.wins+p.losses||1))*100).toFixed(1);
-
-        html += `
-        <div class="card">
-            <h3>${p.name}</h3>
-            <p>Role: ${p.role}</p>
-            <p>Hero: ${p.hero}</p>
-            <p>Win Rate: ${winrate}%</p>
-            <p>MVP: ${p.mvp}</p>
-        </div>`;
+    players=players.map(p=>{
+        if(p.id===id){
+            p.contract=p.contract==="Active"?"Inactive":"Active";
+        }
+        return p;
     });
 
-    document.getElementById("list").innerHTML=html;
+    save();
+    renderContracts();
+    renderPlayers();
 }
 
-/* TOURNAMENT */
-function renderTournaments(){
+/* RENDER */
+function renderPlayers(){
 
-    document.getElementById("tList").innerHTML =
-    tournaments.map(t=>`
+    document.getElementById("list").innerHTML =
+    players.map(p=>`
         <div class="card">
-            <h3>${t.name}</h3>
-            <p>Prize: ${t.prize}</p>
+            <h3>${p.name}</h3>
+            <p>${p.role}</p>
+            <p>Salary: RM ${p.salary}</p>
+            <p>Status: ${p.contract}</p>
         </div>
     `).join("");
 }
 
-/* RANKING */
-function renderRanking(){
+function renderContracts(){
 
-    let sorted = [...players].sort((a,b)=>{
-        let wa=a.wins/(a.wins+a.losses||1);
-        let wb=b.wins/(b.wins+b.losses||1);
-        return wb-wa;
-    });
-
-    document.getElementById("rankList").innerHTML =
-    sorted.map((p,i)=>`
+    document.getElementById("contractList").innerHTML =
+    players.map(p=>`
         <div class="card">
-            <h3>#${i+1} ${p.name}</h3>
-            <p>${((p.wins/(p.wins+p.losses||1))*100).toFixed(1)}%</p>
+            <h3>${p.name}</h3>
+            <p>${p.contract}</p>
+            <button class="primary" onclick="toggleContract(${p.id})">Toggle</button>
+        </div>
+    `).join("");
+}
+
+function renderSponsors(){
+
+    document.getElementById("sponsorList").innerHTML =
+    sponsors.map(s=>`
+        <div class="card">
+            <h3>${s.name}</h3>
+            <p>RM ${s.amount}</p>
         </div>
     `).join("");
 }
@@ -272,28 +300,87 @@ function renderRanking(){
 /* DASHBOARD */
 function update(){
 
+    let totalSalary = players.reduce((a,b)=>a+(b.salary||0),0);
+    let totalSponsors = sponsors.reduce((a,b)=>a+(b.amount||0),0);
+
     document.getElementById("totalPlayers").innerText=players.length;
-    document.getElementById("totalTournaments").innerText=tournaments.length;
+    document.getElementById("totalSponsors").innerText=sponsors.length;
+    document.getElementById("totalSalary").innerText="RM "+totalSalary;
+}
 
-    let totalWins = players.reduce((a,b)=>a+b.wins,0);
-    let totalGames = players.reduce((a,b)=>a+b.wins+b.losses,0);
+/* EXPORT */
+function exportData(){
 
-    let winRate = totalGames ? ((totalWins/totalGames)*100).toFixed(1) : 0;
+    let data={
+        players,
+        sponsors,
+        announcements,
+        date:new Date()
+    };
 
-    document.getElementById("winRate").innerText=winRate+"%";
+    let blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+    let url=URL.createObjectURL(blob);
 
-    renderRanking();
+    let a=document.createElement("a");
+    a.href=url;
+    a.download="ml_coach_backup.json";
+    a.click();
+}
+
+/* IMPORT */
+function importData(e){
+
+    let reader=new FileReader();
+
+    reader.onload=function(ev){
+
+        let data=JSON.parse(ev.target.result);
+
+        players=data.players||[];
+        sponsors=data.sponsors||[];
+        announcements=data.announcements||[];
+
+        save();
+        renderPlayers();
+        renderSponsors();
+        renderContracts();
+        update();
+    };
+
+    reader.readAsText(e.target.files[0]);
+}
+
+/* ANNOUNCEMENT */
+function addAnnouncement(){
+
+    let msg=document.getElementById("announcement").value;
+    if(!msg) return;
+
+    announcements.push({id:Date.now(),msg});
+    save();
+    alert("Announcement added!");
+}
+
+function showAnnouncements(){
+
+    alert(announcements.map(a=>"• "+a.msg).join("\n"));
 }
 
 /* SAVE */
 function save(){
-    localStorage.setItem("v4_players",JSON.stringify(players));
-    localStorage.setItem("v4_tournaments",JSON.stringify(tournaments));
+
+    localStorage.setItem("v5_players",JSON.stringify(players));
+    localStorage.setItem("v5_sponsors",JSON.stringify(sponsors));
+    localStorage.setItem("v5_announcements",JSON.stringify(announcements));
 }
+
+/* AUTO BACKUP */
+setInterval(save,3000);
 
 /* INIT */
 renderPlayers();
-renderTournaments();
+renderSponsors();
+renderContracts();
 update();
 show("dashboard");
 
