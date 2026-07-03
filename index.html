@@ -13,8 +13,8 @@
     --muted:#94a3b8;
     --blue:#4f46e5;
     --purple:#a855f7;
+    --gold:#fbbf24;
     --red:#ef4444;
-    --green:#22c55e;
     --border:rgba(255,255,255,0.1);
 }
 
@@ -35,7 +35,7 @@ body{
     border-right:1px solid var(--border);
 }
 
-.sidebar h2{color:var(--purple);}
+.sidebar h2{color:var(--gold);}
 
 .nav button{
     width:100%;
@@ -84,7 +84,6 @@ input,select{
 
 <body>
 
-<!-- SIDEBAR -->
 <div class="sidebar">
 <h2>ML Coach Pro v1.4</h2>
 
@@ -153,7 +152,7 @@ input,select{
 
 <!-- RANKING -->
 <div id="ranking" style="display:none">
-<h1>Ranking (Auto Sorted)</h1>
+<h1>Ranking</h1>
 
 <div id="rankList"></div>
 </div>
@@ -162,7 +161,7 @@ input,select{
 
 <script>
 
-/* STORAGE */
+/* STORAGE CLEAN */
 let players = JSON.parse(localStorage.getItem("v4_players")) || [];
 let tournaments = JSON.parse(localStorage.getItem("v4_tournaments")) || [];
 
@@ -173,7 +172,6 @@ let heroes = ["Lancelot","Fanny","Ling","Aldous","Hayabusa","Beatrix","Claude","
 function show(page){
     document.querySelectorAll("#dashboard,#players,#tournament,#ranking")
     .forEach(e=>e.style.display="none");
-
     document.getElementById(page).style.display="block";
 }
 
@@ -200,7 +198,7 @@ function addPlayer(){
     update();
 }
 
-/* TOURNAMENT */
+/* ADD TOURNAMENT */
 function addTournament(){
 
     let name=document.getElementById("tName").value;
@@ -219,7 +217,7 @@ function addTournament(){
     update();
 }
 
-/* RENDER PLAYERS */
+/* PLAYERS */
 function renderPlayers(){
 
     let html="";
@@ -231,9 +229,10 @@ function renderPlayers(){
         html += `
         <div class="card">
             <h3>${p.name}</h3>
-            <p>${p.role}</p>
+            <p>Role: ${p.role}</p>
             <p>Hero: ${p.hero}</p>
-            <p>Win Rate: ${winrate}% | MVP: ${p.mvp}</p>
+            <p>Win Rate: ${winrate}%</p>
+            <p>MVP: ${p.mvp}</p>
         </div>`;
     });
 
@@ -265,7 +264,7 @@ function renderRanking(){
     sorted.map((p,i)=>`
         <div class="card">
             <h3>#${i+1} ${p.name}</h3>
-            <p>Win Rate: ${((p.wins/(p.wins+p.losses||1))*100).toFixed(1)}%</p>
+            <p>${((p.wins/(p.wins+p.losses||1))*100).toFixed(1)}%</p>
         </div>
     `).join("");
 }
@@ -279,7 +278,7 @@ function update(){
     let totalWins = players.reduce((a,b)=>a+b.wins,0);
     let totalGames = players.reduce((a,b)=>a+b.wins+b.losses,0);
 
-    let winRate = totalGames?((totalWins/totalGames)*100).toFixed(1):0;
+    let winRate = totalGames ? ((totalWins/totalGames)*100).toFixed(1) : 0;
 
     document.getElementById("winRate").innerText=winRate+"%";
 
