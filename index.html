@@ -3,51 +3,65 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ML Coach Pro v2.1</title>
+<title>ML Coach Pro v3.0</title>
 
 <style>
 :root{
     --bg:#0b1020;
     --card:rgba(255,255,255,0.06);
+    --card2:rgba(255,255,255,0.1);
     --text:#fff;
     --muted:#94a3b8;
     --blue:#4f46e5;
     --purple:#a855f7;
     --red:#ef4444;
+    --green:#22c55e;
     --border:rgba(255,255,255,0.1);
 }
 
-*{margin:0;padding:0;box-sizing:border-box;font-family:Arial;}
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial;
+}
 
 body{
-    background:radial-gradient(circle,#111827,#050814);
+    background:radial-gradient(circle at top,#111827,#050814);
     color:var(--text);
 }
 
+/* SIDEBAR */
 .sidebar{
     position:fixed;
     width:240px;
     height:100%;
-    background:rgba(15,23,42,0.95);
+    background:rgba(15,23,42,0.9);
     padding:20px;
     border-right:1px solid var(--border);
 }
 
-.sidebar h2{color:var(--purple);}
+.sidebar h2{
+    color:var(--purple);
+    margin-bottom:15px;
+}
 
 .nav button{
     width:100%;
     margin:6px 0;
     padding:10px;
+    border-radius:10px;
     border:1px solid var(--border);
     background:transparent;
     color:white;
-    border-radius:10px;
     cursor:pointer;
 }
 
-.nav button:hover{background:var(--blue);}
+.nav button:hover{
+    background:var(--blue);
+}
 
+/* MAIN */
 .main{
     margin-left:260px;
     padding:20px;
@@ -67,7 +81,7 @@ body{
     gap:10px;
 }
 
-input,select{
+input,select,textarea{
     width:100%;
     padding:10px;
     margin:5px 0;
@@ -80,24 +94,33 @@ input,select{
 .primary{
     background:linear-gradient(45deg,var(--blue),var(--purple));
     color:white;
-    border:none;
     padding:10px;
+    border:none;
     border-radius:10px;
     cursor:pointer;
+}
+
+.small{
+    font-size:12px;
+    color:var(--muted);
 }
 </style>
 </head>
 
 <body>
 
+<!-- SIDEBAR -->
 <div class="sidebar">
-<h2>ML Coach Pro v2.1</h2>
+<h2>ML Coach Pro v3.0</h2>
 
 <div class="nav">
 <button onclick="show('dashboard')">Dashboard</button>
 <button onclick="show('players')">Players</button>
-<button onclick="show('matches')">Matches</button>
+<button onclick="show('stats')">Stats</button>
+<button onclick="show('hero')">Hero Pool</button>
 <button onclick="show('scrim')">Scrim</button>
+<button onclick="show('matches')">Matches</button>
+<button onclick="show('notes')">Coach Notes</button>
 </div>
 </div>
 
@@ -109,25 +132,25 @@ input,select{
 
 <div class="grid">
 <div class="card">
-<h3>Players</h3>
+<h3>Total Players</h3>
 <h1 id="totalPlayers">0</h1>
 </div>
 
 <div class="card">
-<h3>Matches</h3>
-<h1 id="totalMatches">0</h1>
+<h3>Active Scrim</h3>
+<h1 id="totalScrim">0</h1>
 </div>
 
 <div class="card">
-<h3>Scrims</h3>
-<h1 id="totalScrims">0</h1>
+<h3>Total Matches</h3>
+<h1 id="totalMatches">0</h1>
 </div>
 </div>
 </div>
 
 <!-- PLAYERS -->
 <div id="players" style="display:none">
-<h1>Players</h1>
+<h1>Players (Max 7 Slots)</h1>
 
 <input id="name" placeholder="Player Name">
 
@@ -139,26 +162,29 @@ input,select{
 <option>EXP</option>
 </select>
 
+<select id="status">
+<option>Main</option>
+<option>Sub</option>
+</select>
+
 <button class="primary" onclick="addPlayer()">Add Player</button>
 
 <div id="playerList"></div>
 </div>
 
-<!-- MATCHES -->
-<div id="matches" style="display:none">
-<h1>Matches</h1>
+<!-- STATS -->
+<div id="stats" style="display:none">
+<h1>Team Stats</h1>
+<div class="card" id="statsBox">No data yet</div>
+</div>
 
-<input id="opponent" placeholder="Opponent">
-<input id="score" placeholder="Score">
-
-<select id="result">
-<option>Win</option>
-<option>Lose</option>
-</select>
-
-<button class="primary" onclick="addMatch()">Add Match</button>
-
-<div id="matchList"></div>
+<!-- HERO -->
+<div id="hero" style="display:none">
+<h1>Hero Pool</h1>
+<div class="card">
+<p class="small">Assign hero randomly per player</p>
+<div id="heroList"></div>
+</div>
 </div>
 
 <!-- SCRIM -->
@@ -166,117 +192,213 @@ input,select{
 <h1>Scrim Schedule</h1>
 
 <div class="card">
-<input id="scrimTeam" placeholder="Team Name">
+<input id="scrimTeam" placeholder="Opponent Team">
 <input id="scrimDate" type="date">
-
 <button class="primary" onclick="addScrim()">Add Scrim</button>
 </div>
 
 <div id="scrimList"></div>
 </div>
 
+<!-- MATCHES -->
+<div id="matches" style="display:none">
+<h1>Match History</h1>
+
+<div class="card">
+<input id="opponent" placeholder="Opponent">
+<select id="result">
+<option>Win</option>
+<option>Lose</option>
+</select>
+<button class="primary" onclick="addMatch()">Add Match</button>
+</div>
+
+<div id="matchList"></div>
+</div>
+
+<!-- NOTES -->
+<div id="notes" style="display:none">
+<h1>Coach Notes</h1>
+<div class="card">
+<textarea id="noteText" placeholder="Write notes..."></textarea>
+<button class="primary" onclick="saveNotes()">Save Notes</button>
+</div>
+</div>
+
 </div>
 
 <script>
 
-let players = JSON.parse(localStorage.getItem("v2_players")) || [];
-let matches = JSON.parse(localStorage.getItem("v2_matches")) || [];
-let scrims = JSON.parse(localStorage.getItem("v2_scrims")) || [];
+/* ================= CORE DATA ================= */
 
-/* NAV */
+let players = JSON.parse(localStorage.getItem("v3_players")) || [];
+let scrim = JSON.parse(localStorage.getItem("v3_scrim")) || [];
+let matches = JSON.parse(localStorage.getItem("v3_matches")) || [];
+let notes = localStorage.getItem("v3_notes") || "";
+
+/* HERO POOL */
+const heroes = ["Lancelot","Fanny","Ling","Aldous","Hayabusa","Valentina","Beatrix","Claude","Tigreal"];
+
+/* ================= NAV ================= */
+
 function show(page){
-    document.querySelectorAll(".main > div").forEach(d=>d.style.display="none");
+    document.querySelectorAll(".main > div")
+    .forEach(e=>e.style.display="none");
+
     document.getElementById(page).style.display="block";
 }
 
-/* PLAYERS */
+/* ================= PLAYER ================= */
+
 function addPlayer(){
+
+    if(players.length >= 7){
+        alert("Max 7 players only!");
+        return;
+    }
+
     let name = document.getElementById("name").value;
     let role = document.getElementById("role").value;
+    let status = document.getElementById("status").value;
+
     if(!name) return;
 
-    players.push({id:Date.now(),name,role});
+    players.push({
+        id:Date.now(),
+        name,
+        role,
+        status,
+        hero:heroes[Math.floor(Math.random()*heroes.length)],
+        kda:(Math.random()*10).toFixed(1),
+        winRate:Math.floor(Math.random()*100)
+    });
+
     save();
     renderPlayers();
     update();
 }
 
-/* MATCH */
+/* ================= SCRIM ================= */
+
+function addScrim(){
+
+    let team = document.getElementById("scrimTeam").value;
+    let date = document.getElementById("scrimDate").value;
+
+    scrim.push({id:Date.now(),team,date});
+
+    save();
+    renderScrim();
+    update();
+}
+
+/* ================= MATCH ================= */
+
 function addMatch(){
+
     let opponent = document.getElementById("opponent").value;
-    let score = document.getElementById("score").value;
     let result = document.getElementById("result").value;
 
-    if(!opponent || !score) return;
+    matches.push({id:Date.now(),opponent,result});
 
-    matches.push({id:Date.now(),opponent,score,result});
     save();
     renderMatches();
     update();
 }
 
-/* SCRIM */
-function addScrim(){
-    let team = document.getElementById("scrimTeam").value;
-    let date = document.getElementById("scrimDate").value;
+/* ================= NOTES ================= */
 
-    if(!team || !date) return;
-
-    scrims.push({id:Date.now(),team,date});
-    save();
-    renderScrims();
-    update();
+function saveNotes(){
+    notes = document.getElementById("noteText").value;
+    localStorage.setItem("v3_notes",notes);
+    alert("Saved!");
 }
 
-/* SAVE */
-function save(){
-    localStorage.setItem("v2_players",JSON.stringify(players));
-    localStorage.setItem("v2_matches",JSON.stringify(matches));
-    localStorage.setItem("v2_scrims",JSON.stringify(scrims));
-}
+/* ================= RENDER ================= */
 
-/* RENDER */
 function renderPlayers(){
-    document.getElementById("playerList").innerHTML =
-    players.map(p=>`
+
+    let html="";
+
+    players.forEach(p=>{
+        html += `
         <div class="card">
-            <h3>${p.name}</h3>
-            <p>${p.role}</p>
+            <b>${p.name}</b> (${p.status})
+            <p class="small">${p.role}</p>
+            <p>Hero: ${p.hero}</p>
+            <p>KDA: ${p.kda} | WR: ${p.winRate}%</p>
         </div>
-    `).join("");
+        `;
+    });
+
+    document.getElementById("playerList").innerHTML = html;
 }
+
+/* HERO */
+
+function renderHero(){
+
+    let html="";
+
+    players.forEach(p=>{
+        html += `<div class="card">${p.name} → ${p.hero}</div>`;
+    });
+
+    document.getElementById("heroList").innerHTML = html;
+}
+
+/* SCRIM */
+
+function renderScrim(){
+
+    let html="";
+
+    scrim.forEach(s=>{
+        html += `<div class="card">${s.team} | ${s.date}</div>`;
+    });
+
+    document.getElementById("scrimList").innerHTML = html;
+}
+
+/* MATCH */
 
 function renderMatches(){
-    document.getElementById("matchList").innerHTML =
-    matches.map(m=>`
-        <div class="card">
-            <h3>${m.opponent}</h3>
-            <p>${m.score} (${m.result})</p>
-        </div>
-    `).join("");
+
+    let html="";
+
+    matches.forEach(m=>{
+        html += `<div class="card">${m.opponent} - ${m.result}</div>`;
+    });
+
+    document.getElementById("matchList").innerHTML = html;
 }
 
-function renderScrims(){
-    document.getElementById("scrimList").innerHTML =
-    scrims.map(s=>`
-        <div class="card">
-            <h3>${s.team}</h3>
-            <p>${s.date}</p>
-        </div>
-    `).join("");
-}
+/* ================= UPDATE ================= */
 
-/* DASHBOARD */
 function update(){
+
     document.getElementById("totalPlayers").innerText = players.length;
+    document.getElementById("totalScrim").innerText = scrim.length;
     document.getElementById("totalMatches").innerText = matches.length;
-    document.getElementById("totalScrims").innerText = scrims.length;
+
+    document.getElementById("statsBox").innerHTML =
+        "Avg KDA: " +
+        (players.reduce((a,b)=>a+parseFloat(b.kda||0),0)/players.length || 0).toFixed(2);
 }
 
-/* INIT */
+/* ================= SAVE ================= */
+
+function save(){
+    localStorage.setItem("v3_players",JSON.stringify(players));
+    localStorage.setItem("v3_scrim",JSON.stringify(scrim));
+    localStorage.setItem("v3_matches",JSON.stringify(matches));
+}
+
+/* ================= INIT ================= */
+
 renderPlayers();
+renderScrim();
 renderMatches();
-renderScrims();
 update();
 show("dashboard");
 
