@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ML Coach Pro v1.5</title>
+<title>ML Coach Pro v2.1</title>
 
 <style>
 :root{
@@ -13,8 +13,6 @@
     --muted:#94a3b8;
     --blue:#4f46e5;
     --purple:#a855f7;
-    --gold:#fbbf24;
-    --green:#22c55e;
     --red:#ef4444;
     --border:rgba(255,255,255,0.1);
 }
@@ -22,32 +20,33 @@
 *{margin:0;padding:0;box-sizing:border-box;font-family:Arial;}
 
 body{
-    background: radial-gradient(circle,#111827,#050814);
+    background:radial-gradient(circle,#111827,#050814);
     color:var(--text);
 }
 
-/* SIDEBAR */
 .sidebar{
     position:fixed;
     width:240px;
     height:100%;
-    background:rgba(15,23,42,0.9);
+    background:rgba(15,23,42,0.95);
     padding:20px;
     border-right:1px solid var(--border);
 }
 
-.sidebar h2{color:var(--gold);}
+.sidebar h2{color:var(--purple);}
 
 .nav button{
     width:100%;
-    margin:5px 0;
+    margin:6px 0;
     padding:10px;
-    border-radius:10px;
     border:1px solid var(--border);
     background:transparent;
     color:white;
+    border-radius:10px;
     cursor:pointer;
 }
+
+.nav button:hover{background:var(--blue);}
 
 .main{
     margin-left:260px;
@@ -60,6 +59,12 @@ body{
     margin:10px 0;
     border-radius:15px;
     border:1px solid var(--border);
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+    gap:10px;
 }
 
 input,select{
@@ -80,29 +85,19 @@ input,select{
     border-radius:10px;
     cursor:pointer;
 }
-
-.danger{
-    background:var(--red);
-    color:white;
-    border:none;
-    padding:5px;
-    border-radius:6px;
-    cursor:pointer;
-}
 </style>
 </head>
 
 <body>
 
 <div class="sidebar">
-<h2>ML Coach Pro v1.5</h2>
+<h2>ML Coach Pro v2.1</h2>
 
 <div class="nav">
 <button onclick="show('dashboard')">Dashboard</button>
 <button onclick="show('players')">Players</button>
-<button onclick="show('contracts')">Contracts</button>
-<button onclick="show('sponsors')">Sponsors</button>
-<button onclick="show('tools')">Tools</button>
+<button onclick="show('matches')">Matches</button>
+<button onclick="show('scrim')">Scrim</button>
 </div>
 </div>
 
@@ -112,19 +107,21 @@ input,select{
 <div id="dashboard">
 <h1>Dashboard</h1>
 
+<div class="grid">
 <div class="card">
-<h3>Total Players</h3>
+<h3>Players</h3>
 <h1 id="totalPlayers">0</h1>
 </div>
 
 <div class="card">
-<h3>Total Sponsors</h3>
-<h1 id="totalSponsors">0</h1>
+<h3>Matches</h3>
+<h1 id="totalMatches">0</h1>
 </div>
 
 <div class="card">
-<h3>Total Salary</h3>
-<h1 id="totalSalary">RM 0</h1>
+<h3>Scrims</h3>
+<h1 id="totalScrims">0</h1>
+</div>
 </div>
 </div>
 
@@ -142,245 +139,144 @@ input,select{
 <option>EXP</option>
 </select>
 
-<input id="salary" placeholder="Salary (RM)">
-
 <button class="primary" onclick="addPlayer()">Add Player</button>
 
-<div id="list"></div>
+<div id="playerList"></div>
 </div>
 
-<!-- CONTRACTS -->
-<div id="contracts" style="display:none">
-<h1>Contracts</h1>
+<!-- MATCHES -->
+<div id="matches" style="display:none">
+<h1>Matches</h1>
 
-<div id="contractList"></div>
+<input id="opponent" placeholder="Opponent">
+<input id="score" placeholder="Score">
+
+<select id="result">
+<option>Win</option>
+<option>Lose</option>
+</select>
+
+<button class="primary" onclick="addMatch()">Add Match</button>
+
+<div id="matchList"></div>
 </div>
 
-<!-- SPONSORS -->
-<div id="sponsors" style="display:none">
-<h1>Sponsors</h1>
-
-<input id="sName" placeholder="Sponsor Name">
-<input id="sAmount" placeholder="Amount RM">
-
-<button class="primary" onclick="addSponsor()">Add Sponsor</button>
-
-<div id="sponsorList"></div>
-</div>
-
-<!-- TOOLS -->
-<div id="tools" style="display:none">
-
-<h1>Tools</h1>
+<!-- SCRIM -->
+<div id="scrim" style="display:none">
+<h1>Scrim Schedule</h1>
 
 <div class="card">
-<button class="primary" onclick="exportData()">Export Data</button>
+<input id="scrimTeam" placeholder="Team Name">
+<input id="scrimDate" type="date">
 
-<input type="file" onchange="importData(event)">
+<button class="primary" onclick="addScrim()">Add Scrim</button>
 </div>
 
-<div class="card">
-<input id="announcement" placeholder="Write announcement">
-<button class="primary" onclick="addAnnouncement()">Add Announcement</button>
-<button onclick="showAnnouncements()" class="primary">Show Announcements</button>
-</div>
-
+<div id="scrimList"></div>
 </div>
 
 </div>
 
 <script>
 
-/* DATA */
-let players = JSON.parse(localStorage.getItem("v5_players")) || [];
-let sponsors = JSON.parse(localStorage.getItem("v5_sponsors")) || [];
-let announcements = JSON.parse(localStorage.getItem("v5_announcements")) || [];
+let players = JSON.parse(localStorage.getItem("v2_players")) || [];
+let matches = JSON.parse(localStorage.getItem("v2_matches")) || [];
+let scrims = JSON.parse(localStorage.getItem("v2_scrims")) || [];
 
 /* NAV */
 function show(page){
-    document.querySelectorAll("#dashboard,#players,#contracts,#sponsors,#tools")
-    .forEach(e=>e.style.display="none");
+    document.querySelectorAll(".main > div").forEach(d=>d.style.display="none");
     document.getElementById(page).style.display="block";
 }
 
 /* PLAYERS */
 function addPlayer(){
-
-    let name=document.getElementById("name").value;
-    let role=document.getElementById("role").value;
-    let salary=parseFloat(document.getElementById("salary").value||0);
-
+    let name = document.getElementById("name").value;
+    let role = document.getElementById("role").value;
     if(!name) return;
 
-    players.push({
-        id:Date.now(),
-        name,
-        role,
-        salary,
-        contract:"Active"
-    });
-
+    players.push({id:Date.now(),name,role});
     save();
     renderPlayers();
-    renderContracts();
     update();
 }
 
-/* SPONSORS */
-function addSponsor(){
+/* MATCH */
+function addMatch(){
+    let opponent = document.getElementById("opponent").value;
+    let score = document.getElementById("score").value;
+    let result = document.getElementById("result").value;
 
-    let name=document.getElementById("sName").value;
-    let amount=parseFloat(document.getElementById("sAmount").value||0);
+    if(!opponent || !score) return;
 
-    if(!name) return;
-
-    sponsors.push({
-        id:Date.now(),
-        name,
-        amount
-    });
-
+    matches.push({id:Date.now(),opponent,score,result});
     save();
-    renderSponsors();
+    renderMatches();
     update();
 }
 
-/* CONTRACT TOGGLE */
-function toggleContract(id){
+/* SCRIM */
+function addScrim(){
+    let team = document.getElementById("scrimTeam").value;
+    let date = document.getElementById("scrimDate").value;
 
-    players=players.map(p=>{
-        if(p.id===id){
-            p.contract=p.contract==="Active"?"Inactive":"Active";
-        }
-        return p;
-    });
+    if(!team || !date) return;
 
+    scrims.push({id:Date.now(),team,date});
     save();
-    renderContracts();
-    renderPlayers();
+    renderScrims();
+    update();
+}
+
+/* SAVE */
+function save(){
+    localStorage.setItem("v2_players",JSON.stringify(players));
+    localStorage.setItem("v2_matches",JSON.stringify(matches));
+    localStorage.setItem("v2_scrims",JSON.stringify(scrims));
 }
 
 /* RENDER */
 function renderPlayers(){
-
-    document.getElementById("list").innerHTML =
+    document.getElementById("playerList").innerHTML =
     players.map(p=>`
         <div class="card">
             <h3>${p.name}</h3>
             <p>${p.role}</p>
-            <p>Salary: RM ${p.salary}</p>
-            <p>Status: ${p.contract}</p>
         </div>
     `).join("");
 }
 
-function renderContracts(){
-
-    document.getElementById("contractList").innerHTML =
-    players.map(p=>`
+function renderMatches(){
+    document.getElementById("matchList").innerHTML =
+    matches.map(m=>`
         <div class="card">
-            <h3>${p.name}</h3>
-            <p>${p.contract}</p>
-            <button class="primary" onclick="toggleContract(${p.id})">Toggle</button>
+            <h3>${m.opponent}</h3>
+            <p>${m.score} (${m.result})</p>
         </div>
     `).join("");
 }
 
-function renderSponsors(){
-
-    document.getElementById("sponsorList").innerHTML =
-    sponsors.map(s=>`
+function renderScrims(){
+    document.getElementById("scrimList").innerHTML =
+    scrims.map(s=>`
         <div class="card">
-            <h3>${s.name}</h3>
-            <p>RM ${s.amount}</p>
+            <h3>${s.team}</h3>
+            <p>${s.date}</p>
         </div>
     `).join("");
 }
 
 /* DASHBOARD */
 function update(){
-
-    let totalSalary = players.reduce((a,b)=>a+(b.salary||0),0);
-    let totalSponsors = sponsors.reduce((a,b)=>a+(b.amount||0),0);
-
-    document.getElementById("totalPlayers").innerText=players.length;
-    document.getElementById("totalSponsors").innerText=sponsors.length;
-    document.getElementById("totalSalary").innerText="RM "+totalSalary;
+    document.getElementById("totalPlayers").innerText = players.length;
+    document.getElementById("totalMatches").innerText = matches.length;
+    document.getElementById("totalScrims").innerText = scrims.length;
 }
-
-/* EXPORT */
-function exportData(){
-
-    let data={
-        players,
-        sponsors,
-        announcements,
-        date:new Date()
-    };
-
-    let blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
-    let url=URL.createObjectURL(blob);
-
-    let a=document.createElement("a");
-    a.href=url;
-    a.download="ml_coach_backup.json";
-    a.click();
-}
-
-/* IMPORT */
-function importData(e){
-
-    let reader=new FileReader();
-
-    reader.onload=function(ev){
-
-        let data=JSON.parse(ev.target.result);
-
-        players=data.players||[];
-        sponsors=data.sponsors||[];
-        announcements=data.announcements||[];
-
-        save();
-        renderPlayers();
-        renderSponsors();
-        renderContracts();
-        update();
-    };
-
-    reader.readAsText(e.target.files[0]);
-}
-
-/* ANNOUNCEMENT */
-function addAnnouncement(){
-
-    let msg=document.getElementById("announcement").value;
-    if(!msg) return;
-
-    announcements.push({id:Date.now(),msg});
-    save();
-    alert("Announcement added!");
-}
-
-function showAnnouncements(){
-
-    alert(announcements.map(a=>"• "+a.msg).join("\n"));
-}
-
-/* SAVE */
-function save(){
-
-    localStorage.setItem("v5_players",JSON.stringify(players));
-    localStorage.setItem("v5_sponsors",JSON.stringify(sponsors));
-    localStorage.setItem("v5_announcements",JSON.stringify(announcements));
-}
-
-/* AUTO BACKUP */
-setInterval(save,3000);
 
 /* INIT */
 renderPlayers();
-renderSponsors();
-renderContracts();
+renderMatches();
+renderScrims();
 update();
 show("dashboard");
 
