@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ML Coach Pro v3.2</title>
+<title>ML Coach Pro v3.3</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -94,34 +94,19 @@ input,select{
 
 .btn-red{background:var(--red);color:white;border:none;padding:5px;border-radius:6px;cursor:pointer;}
 .btn-blue{background:var(--blue);color:white;border:none;padding:5px;border-radius:6px;cursor:pointer;}
-
-.calendar{
-    display:grid;
-    grid-template-columns:repeat(7,1fr);
-    gap:5px;
-}
-
-.day{
-    padding:10px;
-    background:rgba(255,255,255,0.05);
-    border:1px solid var(--border);
-    border-radius:10px;
-    min-height:60px;
-    font-size:12px;
-}
 </style>
 </head>
 
 <body>
 
 <div class="sidebar">
-<h2>ML Coach Pro v3.2</h2>
+<h2>ML Coach Pro v3.3</h2>
 
 <div class="nav">
 <button onclick="show('dashboard')">Dashboard</button>
 <button onclick="show('players')">Players</button>
-<button onclick="show('scrim')">Scrim</button>
-<button onclick="show('matches')">Matches</button>
+<button onclick="show('finance')">Finance</button>
+<button onclick="show('tournament')">Tournament</button>
 <button onclick="show('stats')">Stats</button>
 </div>
 </div>
@@ -139,13 +124,13 @@ input,select{
 </div>
 
 <div class="card">
-<h3>Scrim</h3>
-<h1 id="totalScrim">0</h1>
+<h3>Income</h3>
+<h1 id="income">RM 0</h1>
 </div>
 
 <div class="card">
-<h3>Matches</h3>
-<h1 id="totalMatches">0</h1>
+<h3>Profit</h3>
+<h1 id="profit">RM 0</h1>
 </div>
 </div>
 
@@ -169,40 +154,37 @@ input,select{
 <option>EXP</option>
 </select>
 
+<input id="salary" placeholder="Salary (RM)">
+
 <button class="primary" onclick="addPlayer()">Add Player</button>
 
 <div id="playerList"></div>
 </div>
 
-<!-- SCRIM CALENDAR -->
-<div id="scrim" style="display:none">
-<h1>Scrim Calendar</h1>
+<!-- FINANCE -->
+<div id="finance" style="display:none">
+<h1>Finance</h1>
 
 <div class="card">
-<input id="scrimTeam" placeholder="Opponent Team">
-<input id="scrimDate" type="date">
-<button class="primary" onclick="addScrim()">Add Scrim</button>
+<input id="sponsorName" placeholder="Sponsor Name">
+<input id="sponsorAmount" placeholder="Amount (RM)">
+<button class="primary" onclick="addSponsor()">Add Sponsor</button>
 </div>
+
+<div id="sponsorList"></div>
+</div>
+
+<!-- TOURNAMENT -->
+<div id="tournament" style="display:none">
+<h1>Tournament</h1>
 
 <div class="card">
-<div class="calendar" id="calendar"></div>
-</div>
-</div>
-
-<!-- MATCHES -->
-<div id="matches" style="display:none">
-<h1>Match History</h1>
-
-<div class="card">
-<input id="opponent" placeholder="Opponent">
-<select id="result">
-<option>Win</option>
-<option>Lose</option>
-</select>
-<button class="primary" onclick="addMatch()">Add Match</button>
+<input id="tName" placeholder="Tournament Name">
+<input id="tPrize" placeholder="Prize Pool (RM)">
+<button class="primary" onclick="addTournament()">Add Tournament</button>
 </div>
 
-<div id="matchList"></div>
+<div id="tList"></div>
 </div>
 
 <!-- STATS -->
@@ -215,9 +197,9 @@ input,select{
 
 <script>
 
-let players = JSON.parse(localStorage.getItem("v32_players")) || [];
-let scrims = JSON.parse(localStorage.getItem("v32_scrims")) || [];
-let matches = JSON.parse(localStorage.getItem("v32_matches")) || [];
+let players = JSON.parse(localStorage.getItem("v33_players")) || [];
+let sponsors = JSON.parse(localStorage.getItem("v33_sponsors")) || [];
+let tournaments = JSON.parse(localStorage.getItem("v33_tournaments")) || [];
 
 let chart;
 
@@ -227,94 +209,102 @@ document.querySelectorAll(".main > div").forEach(e=>e.style.display="none");
 document.getElementById(page).style.display="block";
 }
 
-/* PLAYER */
+/* PLAYERS */
 function addPlayer(){
+
 let name=document.getElementById("name").value;
 let role=document.getElementById("role").value;
+let salary=parseFloat(document.getElementById("salary").value||0);
+
 if(!name)return;
 
 players.push({
 id:Date.now(),
 name,
 role,
+salary,
 kda:(Math.random()*10).toFixed(1),
 win:(Math.random()*100).toFixed(0)
 });
 
-save();renderPlayers();update();drawRadar();
+save();
+renderPlayers();
+update();
+drawRadar();
 }
 
-/* SCRIM */
-function addScrim(){
-scrims.push({
+/* SPONSOR */
+function addSponsor(){
+
+sponsors.push({
 id:Date.now(),
-team:document.getElementById("scrimTeam").value,
-date:document.getElementById("scrimDate").value
+name:document.getElementById("sponsorName").value,
+amount:parseFloat(document.getElementById("sponsorAmount").value||0)
 });
 
 save();
-renderCalendar();
+renderSponsors();
 update();
 }
 
-/* MATCH */
-function addMatch(){
-matches.push({
+/* TOURNAMENT */
+function addTournament(){
+
+tournaments.push({
 id:Date.now(),
-opponent:document.getElementById("opponent").value,
-result:document.getElementById("result").value
+name:document.getElementById("tName").value,
+prize:parseFloat(document.getElementById("tPrize").value||0)
 });
 
 save();
-renderMatches();
+renderTournaments();
 update();
 }
 
-/* RENDER PLAYERS */
+/* RENDER */
 function renderPlayers(){
 let html="";
 players.forEach(p=>{
-html+=`
-<div class="card">
-<b>${p.name}</b>
-<p>${p.role}</p>
-<p>KDA:${p.kda} WR:${p.win}%</p>
-</div>`;
+html+=`<div class="card"><b>${p.name}</b><p>${p.role}</p><p>Salary RM ${p.salary}</p></div>`;
 });
 document.getElementById("playerList").innerHTML=html;
 }
 
-/* MATCH */
-function renderMatches(){
+function renderSponsors(){
 let html="";
-matches.forEach(m=>{
-html+=`<div class="card">${m.opponent} - ${m.result}</div>`;
+sponsors.forEach(s=>{
+html+=`<div class="card">${s.name} - RM ${s.amount}</div>`;
 });
-document.getElementById("matchList").innerHTML=html;
+document.getElementById("sponsorList").innerHTML=html;
 }
 
-/* CALENDAR SCRIM */
-function renderCalendar(){
-
+function renderTournaments(){
 let html="";
-for(let i=1;i<=30;i++){
-
-let scr = scrims.find(s=>new Date(s.date).getDate()===i);
-
-html+=`
-<div class="day">
-<b>${i}</b><br>
-${scr ? scr.team : ""}
-</div>`;
+tournaments.forEach(t=>{
+html+=`<div class="card">${t.name} - Prize RM ${t.prize}</div>`;
+});
+document.getElementById("tList").innerHTML=html;
 }
 
-document.getElementById("calendar").innerHTML=html;
+/* DASHBOARD */
+function update(){
+
+let totalSalary = players.reduce((a,b)=>a+(b.salary||0),0);
+let totalIncome = sponsors.reduce((a,b)=>a+(b.amount||0),0);
+let profit = totalIncome - totalSalary;
+
+document.getElementById("totalPlayers").innerText=players.length;
+document.getElementById("income").innerText="RM "+totalIncome;
+document.getElementById("profit").innerText="RM "+profit;
+
+document.getElementById("statsBox").innerHTML=
+"Avg KDA: "+(players.reduce((a,b)=>a+parseFloat(b.kda),0)/players.length||0).toFixed(2);
 }
 
 /* RADAR */
 function drawRadar(){
 
-let avg={kda:0,win:0,role:0};
+let avg={kda:0,win:0};
 
 players.forEach(p=>{
 avg.kda+=parseFloat(p.kda);
@@ -340,27 +330,17 @@ borderColor:"#a855f7"
 });
 }
 
-/* UPDATE */
-function update(){
-document.getElementById("totalPlayers").innerText=players.length;
-document.getElementById("totalScrim").innerText=scrims.length;
-document.getElementById("totalMatches").innerText=matches.length;
-
-document.getElementById("statsBox").innerHTML=
-"Avg KDA: "+(players.reduce((a,b)=>a+parseFloat(b.kda),0)/players.length||0).toFixed(2);
-}
-
 /* SAVE */
 function save(){
-localStorage.setItem("v32_players",JSON.stringify(players));
-localStorage.setItem("v32_scrims",JSON.stringify(scrims));
-localStorage.setItem("v32_matches",JSON.stringify(matches));
+localStorage.setItem("v33_players",JSON.stringify(players));
+localStorage.setItem("v33_sponsors",JSON.stringify(sponsors));
+localStorage.setItem("v33_tournaments",JSON.stringify(tournaments));
 }
 
 /* INIT */
 renderPlayers();
-renderCalendar();
-renderMatches();
+renderSponsors();
+renderTournaments();
 update();
 drawRadar();
 show("dashboard");
