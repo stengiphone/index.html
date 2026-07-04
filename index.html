@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ML Coach Pro v3.1</title>
+<title>ML Coach Pro v3.2</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -92,22 +92,37 @@ input,select{
     cursor:pointer;
 }
 
-.small{font-size:12px;color:var(--muted);}
 .btn-red{background:var(--red);color:white;border:none;padding:5px;border-radius:6px;cursor:pointer;}
 .btn-blue{background:var(--blue);color:white;border:none;padding:5px;border-radius:6px;cursor:pointer;}
+
+.calendar{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:5px;
+}
+
+.day{
+    padding:10px;
+    background:rgba(255,255,255,0.05);
+    border:1px solid var(--border);
+    border-radius:10px;
+    min-height:60px;
+    font-size:12px;
+}
 </style>
 </head>
 
 <body>
 
 <div class="sidebar">
-<h2>ML Coach Pro v3.1</h2>
+<h2>ML Coach Pro v3.2</h2>
 
 <div class="nav">
 <button onclick="show('dashboard')">Dashboard</button>
 <button onclick="show('players')">Players</button>
-<button onclick="show('stats')">Stats</button>
 <button onclick="show('scrim')">Scrim</button>
+<button onclick="show('matches')">Matches</button>
+<button onclick="show('stats')">Stats</button>
 </div>
 </div>
 
@@ -159,31 +174,50 @@ input,select{
 <div id="playerList"></div>
 </div>
 
+<!-- SCRIM CALENDAR -->
+<div id="scrim" style="display:none">
+<h1>Scrim Calendar</h1>
+
+<div class="card">
+<input id="scrimTeam" placeholder="Opponent Team">
+<input id="scrimDate" type="date">
+<button class="primary" onclick="addScrim()">Add Scrim</button>
+</div>
+
+<div class="card">
+<div class="calendar" id="calendar"></div>
+</div>
+</div>
+
+<!-- MATCHES -->
+<div id="matches" style="display:none">
+<h1>Match History</h1>
+
+<div class="card">
+<input id="opponent" placeholder="Opponent">
+<select id="result">
+<option>Win</option>
+<option>Lose</option>
+</select>
+<button class="primary" onclick="addMatch()">Add Match</button>
+</div>
+
+<div id="matchList"></div>
+</div>
+
 <!-- STATS -->
 <div id="stats" style="display:none">
 <h1>Team Stats</h1>
 <div class="card" id="statsBox"></div>
 </div>
 
-<!-- SCRIM -->
-<div id="scrim" style="display:none">
-<h1>Scrim Schedule</h1>
-
-<div class="card">
-<input id="scrimTeam" placeholder="Team">
-<input id="scrimDate" type="date">
-<button class="primary" onclick="addScrim()">Add Scrim</button>
-</div>
-
-<div id="scrimList"></div>
-</div>
-
 </div>
 
 <script>
 
-let players = JSON.parse(localStorage.getItem("v31_players")) || [];
-let scrim = JSON.parse(localStorage.getItem("v31_scrim")) || [];
+let players = JSON.parse(localStorage.getItem("v32_players")) || [];
+let scrims = JSON.parse(localStorage.getItem("v32_scrims")) || [];
+let matches = JSON.parse(localStorage.getItem("v32_matches")) || [];
 
 let chart;
 
@@ -193,7 +227,7 @@ document.querySelectorAll(".main > div").forEach(e=>e.style.display="none");
 document.getElementById(page).style.display="block";
 }
 
-/* ADD PLAYER */
+/* PLAYER */
 function addPlayer(){
 let name=document.getElementById("name").value;
 let role=document.getElementById("role").value;
@@ -207,34 +241,33 @@ kda:(Math.random()*10).toFixed(1),
 win:(Math.random()*100).toFixed(0)
 });
 
-save();
-renderPlayers();
-update();
-drawRadar();
-}
-
-/* DELETE */
-function delPlayer(id){
-players=players.filter(p=>p.id!==id);
-save();renderPlayers();update();drawRadar();
-}
-
-/* EDIT */
-function editPlayer(id){
-let p=players.find(x=>x.id===id);
-let newName=prompt("Edit name:",p.name);
-if(newName)p.name=newName;
 save();renderPlayers();update();drawRadar();
 }
 
 /* SCRIM */
 function addScrim(){
-scrim.push({
+scrims.push({
 id:Date.now(),
 team:document.getElementById("scrimTeam").value,
 date:document.getElementById("scrimDate").value
 });
-save();renderScrim();update();
+
+save();
+renderCalendar();
+update();
+}
+
+/* MATCH */
+function addMatch(){
+matches.push({
+id:Date.now(),
+opponent:document.getElementById("opponent").value,
+result:document.getElementById("result").value
+});
+
+save();
+renderMatches();
+update();
 }
 
 /* RENDER PLAYERS */
@@ -245,38 +278,43 @@ html+=`
 <div class="card">
 <b>${p.name}</b>
 <p>${p.role}</p>
-<p>KDA:${p.kda} | WR:${p.win}%</p>
-
-<button class="btn-blue" onclick="editPlayer(${p.id})">Edit</button>
-<button class="btn-red" onclick="delPlayer(${p.id})">Del</button>
+<p>KDA:${p.kda} WR:${p.win}%</p>
 </div>`;
 });
 document.getElementById("playerList").innerHTML=html;
 }
 
-/* SCRIM */
-function renderScrim(){
+/* MATCH */
+function renderMatches(){
 let html="";
-scrim.forEach(s=>{
-html+=`<div class="card">${s.team} - ${s.date}</div>`;
+matches.forEach(m=>{
+html+=`<div class="card">${m.opponent} - ${m.result}</div>`;
 });
-document.getElementById("scrimList").innerHTML=html;
+document.getElementById("matchList").innerHTML=html;
 }
 
-/* UPDATE */
-function update(){
-document.getElementById("totalPlayers").innerText=players.length;
-document.getElementById("totalScrim").innerText=scrim.length;
-document.getElementById("totalMatches").innerText=0;
+/* CALENDAR SCRIM */
+function renderCalendar(){
 
-document.getElementById("statsBox").innerText=
-"Avg KDA: "+(players.reduce((a,b)=>a+parseFloat(b.kda),0)/players.length||0).toFixed(2);
+let html="";
+for(let i=1;i<=30;i++){
+
+let scr = scrims.find(s=>new Date(s.date).getDate()===i);
+
+html+=`
+<div class="day">
+<b>${i}</b><br>
+${scr ? scr.team : ""}
+</div>`;
+}
+
+document.getElementById("calendar").innerHTML=html;
 }
 
 /* RADAR */
 function drawRadar(){
 
-let avg={kda:0,win:0};
+let avg={kda:0,win:0,role:0};
 
 players.forEach(p=>{
 avg.kda+=parseFloat(p.kda);
@@ -302,15 +340,27 @@ borderColor:"#a855f7"
 });
 }
 
+/* UPDATE */
+function update(){
+document.getElementById("totalPlayers").innerText=players.length;
+document.getElementById("totalScrim").innerText=scrims.length;
+document.getElementById("totalMatches").innerText=matches.length;
+
+document.getElementById("statsBox").innerHTML=
+"Avg KDA: "+(players.reduce((a,b)=>a+parseFloat(b.kda),0)/players.length||0).toFixed(2);
+}
+
 /* SAVE */
 function save(){
-localStorage.setItem("v31_players",JSON.stringify(players));
-localStorage.setItem("v31_scrim",JSON.stringify(scrim));
+localStorage.setItem("v32_players",JSON.stringify(players));
+localStorage.setItem("v32_scrims",JSON.stringify(scrims));
+localStorage.setItem("v32_matches",JSON.stringify(matches));
 }
 
 /* INIT */
 renderPlayers();
-renderScrim();
+renderCalendar();
+renderMatches();
 update();
 drawRadar();
 show("dashboard");
