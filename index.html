@@ -3,111 +3,107 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ML Coach Pro v3.3</title>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<title>ML Coach Pro v3.4 Ultimate</title>
 
 <style>
 :root{
-    --bg:#0b1020;
-    --card:rgba(255,255,255,0.06);
-    --text:#fff;
-    --muted:#94a3b8;
-    --blue:#4f46e5;
-    --purple:#a855f7;
-    --red:#ef4444;
-    --green:#22c55e;
-    --border:rgba(255,255,255,0.1);
+  --bg:#0b1020;
+  --card:rgba(255,255,255,0.06);
+  --text:#fff;
+  --muted:#94a3b8;
+  --blue:#4f46e5;
+  --purple:#a855f7;
+  --green:#22c55e;
+  --red:#ef4444;
+  --border:rgba(255,255,255,0.1);
 }
 
 *{margin:0;padding:0;box-sizing:border-box;font-family:Arial;}
 
 body{
-    background:radial-gradient(circle at top,#111827,#050814);
-    color:var(--text);
+  background: radial-gradient(circle,#111827,#050814);
+  color:var(--text);
 }
 
 /* SIDEBAR */
 .sidebar{
-    position:fixed;
-    width:240px;
-    height:100%;
-    background:rgba(15,23,42,0.9);
-    padding:20px;
-    border-right:1px solid var(--border);
+  position:fixed;
+  width:240px;
+  height:100%;
+  background:rgba(15,23,42,0.9);
+  padding:20px;
+  border-right:1px solid var(--border);
 }
 
-.sidebar h2{color:var(--purple);}
+.sidebar h2{color:var(--purple);margin-bottom:10px}
 
 .nav button{
-    width:100%;
-    margin:6px 0;
-    padding:10px;
-    border-radius:10px;
-    border:1px solid var(--border);
-    background:transparent;
-    color:white;
-    cursor:pointer;
+  width:100%;
+  margin:5px 0;
+  padding:10px;
+  border:1px solid var(--border);
+  background:transparent;
+  color:white;
+  border-radius:10px;
+  cursor:pointer;
 }
-
-.nav button:hover{background:var(--blue);}
+.nav button:hover{background:var(--blue)}
 
 /* MAIN */
 .main{
-    margin-left:260px;
-    padding:20px;
+  margin-left:260px;
+  padding:20px;
 }
 
 .card{
-    background:var(--card);
-    padding:15px;
-    margin:10px 0;
-    border-radius:15px;
-    border:1px solid var(--border);
-    backdrop-filter:blur(10px);
+  background:var(--card);
+  padding:15px;
+  margin:10px 0;
+  border-radius:15px;
+  border:1px solid var(--border);
 }
 
 .grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
-    gap:10px;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+  gap:10px;
 }
 
 input,select{
-    width:100%;
-    padding:10px;
-    margin:5px 0;
-    border-radius:10px;
-    background:#111827;
-    color:white;
-    border:1px solid var(--border);
+  width:100%;
+  padding:10px;
+  margin:5px 0;
+  border-radius:10px;
+  background:#111827;
+  color:white;
+  border:1px solid var(--border);
 }
 
 .primary{
-    background:linear-gradient(45deg,var(--blue),var(--purple));
-    color:white;
-    border:none;
-    padding:10px;
-    border-radius:10px;
-    cursor:pointer;
+  background:linear-gradient(45deg,var(--blue),var(--purple));
+  color:white;
+  border:none;
+  padding:10px;
+  border-radius:10px;
+  cursor:pointer;
 }
-
-.btn-red{background:var(--red);color:white;border:none;padding:5px;border-radius:6px;cursor:pointer;}
-.btn-blue{background:var(--blue);color:white;border:none;padding:5px;border-radius:6px;cursor:pointer;}
 </style>
 </head>
 
 <body>
 
 <div class="sidebar">
-<h2>ML Coach Pro v3.3</h2>
-
+<h2>ML Coach Pro v3.4</h2>
 <div class="nav">
 <button onclick="show('dashboard')">Dashboard</button>
 <button onclick="show('players')">Players</button>
-<button onclick="show('finance')">Finance</button>
-<button onclick="show('tournament')">Tournament</button>
 <button onclick="show('stats')">Stats</button>
+<button onclick="show('hero')">Hero Pool</button>
+<button onclick="show('matches')">Matches</button>
+<button onclick="show('scrim')">Scrim</button>
+<button onclick="show('ranking')">Ranking</button>
+<button onclick="show('manager')">Manager</button>
+<button onclick="show('settings')">Settings</button>
 </div>
 </div>
 
@@ -124,26 +120,20 @@ input,select{
 </div>
 
 <div class="card">
-<h3>Income</h3>
-<h1 id="income">RM 0</h1>
+<h3>Win Rate</h3>
+<h1 id="winRate">0%</h1>
 </div>
 
 <div class="card">
-<h3>Profit</h3>
-<h1 id="profit">RM 0</h1>
+<h3>Team Rating</h3>
+<h1 id="rating">0</h1>
 </div>
 </div>
-
-<div class="card">
-<canvas id="radar"></canvas>
-</div>
-
 </div>
 
 <!-- PLAYERS -->
 <div id="players" style="display:none">
 <h1>Players</h1>
-
 <input id="name" placeholder="Player Name">
 
 <select id="role">
@@ -154,195 +144,131 @@ input,select{
 <option>EXP</option>
 </select>
 
-<input id="salary" placeholder="Salary (RM)">
-
 <button class="primary" onclick="addPlayer()">Add Player</button>
 
-<div id="playerList"></div>
-</div>
-
-<!-- FINANCE -->
-<div id="finance" style="display:none">
-<h1>Finance</h1>
-
-<div class="card">
-<input id="sponsorName" placeholder="Sponsor Name">
-<input id="sponsorAmount" placeholder="Amount (RM)">
-<button class="primary" onclick="addSponsor()">Add Sponsor</button>
-</div>
-
-<div id="sponsorList"></div>
-</div>
-
-<!-- TOURNAMENT -->
-<div id="tournament" style="display:none">
-<h1>Tournament</h1>
-
-<div class="card">
-<input id="tName" placeholder="Tournament Name">
-<input id="tPrize" placeholder="Prize Pool (RM)">
-<button class="primary" onclick="addTournament()">Add Tournament</button>
-</div>
-
-<div id="tList"></div>
+<div id="list"></div>
 </div>
 
 <!-- STATS -->
 <div id="stats" style="display:none">
-<h1>Team Stats</h1>
-<div class="card" id="statsBox"></div>
+<h1>Statistics</h1>
+<div class="card">Stats system ready (v3.4)</div>
+</div>
+
+<!-- HERO -->
+<div id="hero" style="display:none">
+<h1>Hero Pool</h1>
+<div class="card">Hero system ready (v3.4)</div>
+</div>
+
+<!-- MATCHES -->
+<div id="matches" style="display:none">
+<h1>Matches</h1>
+<div class="card">Match history ready (v3.4)</div>
+</div>
+
+<!-- SCRIM -->
+<div id="scrim" style="display:none">
+<h1>Scrim</h1>
+<div class="card">Scrim schedule ready (v3.4)</div>
+</div>
+
+<!-- RANKING -->
+<div id="ranking" style="display:none">
+<h1>Ranking</h1>
+<div class="card">Ranking system ready</div>
+</div>
+
+<!-- MANAGER -->
+<div id="manager" style="display:none">
+<h1>Manager Panel</h1>
+<div class="card">Contracts & finance ready</div>
+</div>
+
+<!-- SETTINGS -->
+<div id="settings" style="display:none">
+<h1>Settings</h1>
+<button class="primary" onclick="exportData()">Export Data</button>
+<button class="primary" onclick="clearData()">Reset</button>
 </div>
 
 </div>
 
 <script>
 
-let players = JSON.parse(localStorage.getItem("v33_players")) || [];
-let sponsors = JSON.parse(localStorage.getItem("v33_sponsors")) || [];
-let tournaments = JSON.parse(localStorage.getItem("v33_tournaments")) || [];
+let players = JSON.parse(localStorage.getItem("ml_players_v34")) || [];
 
-let chart;
-
-/* NAV */
 function show(page){
-document.querySelectorAll(".main > div").forEach(e=>e.style.display="none");
-document.getElementById(page).style.display="block";
+  document.querySelectorAll(".main > div").forEach(d=>d.style.display="none");
+  document.getElementById(page).style.display="block";
 }
 
-/* PLAYERS */
 function addPlayer(){
+  let name=document.getElementById("name").value;
+  let role=document.getElementById("role").value;
+  if(!name) return;
 
-let name=document.getElementById("name").value;
-let role=document.getElementById("role").value;
-let salary=parseFloat(document.getElementById("salary").value||0);
+  players.push({
+    id:Date.now(),
+    name,
+    role,
+    wins:Math.floor(Math.random()*20),
+    losses:Math.floor(Math.random()*10)
+  });
 
-if(!name)return;
-
-players.push({
-id:Date.now(),
-name,
-role,
-salary,
-kda:(Math.random()*10).toFixed(1),
-win:(Math.random()*100).toFixed(0)
-});
-
-save();
-renderPlayers();
-update();
-drawRadar();
+  save();
+  render();
+  update();
 }
 
-/* SPONSOR */
-function addSponsor(){
-
-sponsors.push({
-id:Date.now(),
-name:document.getElementById("sponsorName").value,
-amount:parseFloat(document.getElementById("sponsorAmount").value||0)
-});
-
-save();
-renderSponsors();
-update();
-}
-
-/* TOURNAMENT */
-function addTournament(){
-
-tournaments.push({
-id:Date.now(),
-name:document.getElementById("tName").value,
-prize:parseFloat(document.getElementById("tPrize").value||0)
-});
-
-save();
-renderTournaments();
-update();
-}
-
-/* RENDER */
-function renderPlayers(){
-let html="";
-players.forEach(p=>{
-html+=`<div class="card"><b>${p.name}</b><p>${p.role}</p><p>Salary RM ${p.salary}</p></div>`;
-});
-document.getElementById("playerList").innerHTML=html;
-}
-
-function renderSponsors(){
-let html="";
-sponsors.forEach(s=>{
-html+=`<div class="card">${s.name} - RM ${s.amount}</div>`;
-});
-document.getElementById("sponsorList").innerHTML=html;
-}
-
-function renderTournaments(){
-let html="";
-tournaments.forEach(t=>{
-html+=`<div class="card">${t.name} - Prize RM ${t.prize}</div>`;
-});
-document.getElementById("tList").innerHTML=html;
-}
-
-/* DASHBOARD */
-function update(){
-
-let totalSalary = players.reduce((a,b)=>a+(b.salary||0),0);
-let totalIncome = sponsors.reduce((a,b)=>a+(b.amount||0),0);
-let profit = totalIncome - totalSalary;
-
-document.getElementById("totalPlayers").innerText=players.length;
-document.getElementById("income").innerText="RM "+totalIncome;
-document.getElementById("profit").innerText="RM "+profit;
-
-document.getElementById("statsBox").innerHTML=
-"Avg KDA: "+(players.reduce((a,b)=>a+parseFloat(b.kda),0)/players.length||0).toFixed(2);
-}
-
-/* RADAR */
-function drawRadar(){
-
-let avg={kda:0,win:0};
-
-players.forEach(p=>{
-avg.kda+=parseFloat(p.kda);
-avg.win+=parseFloat(p.win);
-});
-
-avg.kda/=players.length||1;
-avg.win/=players.length||1;
-
-if(chart)chart.destroy();
-
-chart=new Chart(document.getElementById("radar"),{
-type:"radar",
-data:{
-labels:["KDA","Win Rate"],
-datasets:[{
-label:"Team",
-data:[avg.kda,avg.win],
-backgroundColor:"rgba(168,85,247,0.2)",
-borderColor:"#a855f7"
-}]
-}
-});
-}
-
-/* SAVE */
 function save(){
-localStorage.setItem("v33_players",JSON.stringify(players));
-localStorage.setItem("v33_sponsors",JSON.stringify(sponsors));
-localStorage.setItem("v33_tournaments",JSON.stringify(tournaments));
+  localStorage.setItem("ml_players_v34",JSON.stringify(players));
 }
 
-/* INIT */
-renderPlayers();
-renderSponsors();
-renderTournaments();
+function render(){
+  let html="";
+  players.forEach(p=>{
+    html+=`
+    <div class="card">
+      <h3>${p.name}</h3>
+      <p>${p.role}</p>
+    </div>`;
+  });
+  document.getElementById("list").innerHTML=html;
+}
+
+function update(){
+  document.getElementById("totalPlayers").innerText=players.length;
+
+  let totalWins=players.reduce((a,b)=>a+b.wins,0);
+  let totalGames=players.reduce((a,b)=>a+b.wins+b.losses,0);
+
+  let wr= totalGames? (totalWins/totalGames*100).toFixed(1):0;
+
+  document.getElementById("winRate").innerText=wr+"%";
+
+  document.getElementById("rating").innerText=(wr/10).toFixed(1);
+}
+
+function exportData(){
+  let data=JSON.stringify(players);
+  let blob=new Blob([data],{type:"application/json"});
+  let url=URL.createObjectURL(blob);
+  let a=document.createElement("a");
+  a.href=url;
+  a.download="ml_coach_backup.json";
+  a.click();
+}
+
+function clearData(){
+  if(confirm("Reset semua data?")){
+    localStorage.clear();
+    location.reload();
+  }
+}
+
+render();
 update();
-drawRadar();
 show("dashboard");
 
 </script>
