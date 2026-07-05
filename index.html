@@ -1,1 +1,277 @@
-<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ML Coach Pro v3.5</title><style>body{font-family:Arial;background:#0b1020;color:#fff;margin:0}.side{position:fixed;width:220px;height:100%;background:#111827;padding:15px}.main{margin-left:240px;padding:20px}.card{background:#1f2937;padding:15px;border-radius:12px;margin:10px 0}button,input,select{padding:8px;margin:5px;border-radius:8px}table{width:100%;border-collapse:collapse}td,th{border:1px solid #555;padding:8px}</style></head><body><div class="side"><h2>ML Coach Pro v3.5</h2></div><div class="main"><h1>Scrim Management</h1><div class="card"><input id="opp" placeholder="Opponent"><input id="date" type="date"><input id="time" type="time"><select id="status"><option>Scheduled</option><option>Completed</option><option>Cancelled</option></select><button onclick="addScrim()">Add Scrim</button></div><div class="card"><h3>Upcoming Match</h3><div id="up"></div></div><div class="card"><table><thead><tr><th>Opponent</th><th>Date</th><th>Time</th><th>Status</th><th>Action</th></tr></thead><tbody id="list"></tbody></table></div></div><script>let scrims=JSON.parse(localStorage.getItem("ml_scrims_v35")||"[]");function save(){localStorage.setItem("ml_scrims_v35",JSON.stringify(scrims))}function addScrim(){let o=opp.value,d=date.value,t=time.value,s=status.value;if(!o||!d)return;scrims.push({id:Date.now(),o,d,t,s});save();render();opp.value="";date.value="";time.value=""}function del(id){scrims=scrims.filter(x=>x.id!=id);save();render()}function edit(id){let x=scrims.find(a=>a.id==id);if(!x)return;let no=prompt("Opponent",x.o);if(no===null)return;x.o=no;x.d=prompt("Date",x.d)||x.d;x.t=prompt("Time",x.t)||x.t;x.s=prompt("Status",x.s)||x.s;save();render()}function render(){list.innerHTML="";scrims.sort((a,b)=>(a.d+a.t).localeCompare(b.d+b.t));scrims.forEach(x=>list.innerHTML+=`<tr><td>${x.o}</td><td>${x.d}</td><td>${x.t}</td><td>${x.s}</td><td><button onclick="edit(${x.id})">Edit</button><button onclick="del(${x.id})">Delete</button></td></tr>`);let n=scrims.find(x=>x.s==="Scheduled");up.textContent=n?`${n.o} | ${n.d} ${n.t}`:"No upcoming match"}render();</script></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ML Coach Pro v3.4 Ultimate</title>
+
+<style>
+:root{
+  --bg:#0b1020;
+  --card:rgba(255,255,255,0.06);
+  --text:#fff;
+  --muted:#94a3b8;
+  --blue:#4f46e5;
+  --purple:#a855f7;
+  --green:#22c55e;
+  --red:#ef4444;
+  --border:rgba(255,255,255,0.1);
+}
+
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial;}
+
+body{
+  background: radial-gradient(circle,#111827,#050814);
+  color:var(--text);
+}
+
+/* SIDEBAR */
+.sidebar{
+  position:fixed;
+  width:240px;
+  height:100%;
+  background:rgba(15,23,42,0.9);
+  padding:20px;
+  border-right:1px solid var(--border);
+}
+
+.sidebar h2{color:var(--purple);margin-bottom:10px}
+
+.nav button{
+  width:100%;
+  margin:5px 0;
+  padding:10px;
+  border:1px solid var(--border);
+  background:transparent;
+  color:white;
+  border-radius:10px;
+  cursor:pointer;
+}
+.nav button:hover{background:var(--blue)}
+
+/* MAIN */
+.main{
+  margin-left:260px;
+  padding:20px;
+}
+
+.card{
+  background:var(--card);
+  padding:15px;
+  margin:10px 0;
+  border-radius:15px;
+  border:1px solid var(--border);
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+  gap:10px;
+}
+
+input,select{
+  width:100%;
+  padding:10px;
+  margin:5px 0;
+  border-radius:10px;
+  background:#111827;
+  color:white;
+  border:1px solid var(--border);
+}
+
+.primary{
+  background:linear-gradient(45deg,var(--blue),var(--purple));
+  color:white;
+  border:none;
+  padding:10px;
+  border-radius:10px;
+  cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div class="sidebar">
+<h2>ML Coach Pro v3.4</h2>
+<div class="nav">
+<button onclick="show('dashboard')">Dashboard</button>
+<button onclick="show('players')">Players</button>
+<button onclick="show('stats')">Stats</button>
+<button onclick="show('hero')">Hero Pool</button>
+<button onclick="show('matches')">Matches</button>
+<button onclick="show('scrim')">Scrim</button>
+<button onclick="show('ranking')">Ranking</button>
+<button onclick="show('manager')">Manager</button>
+<button onclick="show('settings')">Settings</button>
+</div>
+</div>
+
+<div class="main">
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+<h1>Dashboard</h1>
+
+<div class="grid">
+<div class="card">
+<h3>Players</h3>
+<h1 id="totalPlayers">0</h1>
+</div>
+
+<div class="card">
+<h3>Win Rate</h3>
+<h1 id="winRate">0%</h1>
+</div>
+
+<div class="card">
+<h3>Team Rating</h3>
+<h1 id="rating">0</h1>
+</div>
+</div>
+</div>
+
+<!-- PLAYERS -->
+<div id="players" style="display:none">
+<h1>Players</h1>
+<input id="name" placeholder="Player Name">
+
+<select id="role">
+<option>Gold</option>
+<option>Jungle</option>
+<option>Mid</option>
+<option>Roam</option>
+<option>EXP</option>
+</select>
+
+<button class="primary" onclick="addPlayer()">Add Player</button>
+
+<div id="list"></div>
+</div>
+
+<!-- STATS -->
+<div id="stats" style="display:none">
+<h1>Statistics</h1>
+<div class="card">Stats system ready (v3.4)</div>
+</div>
+
+<!-- HERO -->
+<div id="hero" style="display:none">
+<h1>Hero Pool</h1>
+<div class="card">Hero system ready (v3.4)</div>
+</div>
+
+<!-- MATCHES -->
+<div id="matches" style="display:none">
+<h1>Matches</h1>
+<div class="card">Match history ready (v3.4)</div>
+</div>
+
+<!-- SCRIM -->
+<div id="scrim" style="display:none">
+<h1>Scrim</h1>
+<div class="card">Scrim schedule ready (v3.4)</div>
+</div>
+
+<!-- RANKING -->
+<div id="ranking" style="display:none">
+<h1>Ranking</h1>
+<div class="card">Ranking system ready</div>
+</div>
+
+<!-- MANAGER -->
+<div id="manager" style="display:none">
+<h1>Manager Panel</h1>
+<div class="card">Contracts & finance ready</div>
+</div>
+
+<!-- SETTINGS -->
+<div id="settings" style="display:none">
+<h1>Settings</h1>
+<button class="primary" onclick="exportData()">Export Data</button>
+<button class="primary" onclick="clearData()">Reset</button>
+</div>
+
+</div>
+
+<script>
+
+let players = JSON.parse(localStorage.getItem("ml_players_v34")) || [];
+
+function show(page){
+  document.querySelectorAll(".main > div").forEach(d=>d.style.display="none");
+  document.getElementById(page).style.display="block";
+}
+
+function addPlayer(){
+  let name=document.getElementById("name").value;
+  let role=document.getElementById("role").value;
+  if(!name) return;
+
+  players.push({
+    id:Date.now(),
+    name,
+    role,
+    wins:Math.floor(Math.random()*20),
+    losses:Math.floor(Math.random()*10)
+  });
+
+  save();
+  render();
+  update();
+}
+
+function save(){
+  localStorage.setItem("ml_players_v34",JSON.stringify(players));
+}
+
+function render(){
+  let html="";
+  players.forEach(p=>{
+    html+=`
+    <div class="card">
+      <h3>${p.name}</h3>
+      <p>${p.role}</p>
+    </div>`;
+  });
+  document.getElementById("list").innerHTML=html;
+}
+
+function update(){
+  document.getElementById("totalPlayers").innerText=players.length;
+
+  let totalWins=players.reduce((a,b)=>a+b.wins,0);
+  let totalGames=players.reduce((a,b)=>a+b.wins+b.losses,0);
+
+  let wr= totalGames? (totalWins/totalGames*100).toFixed(1):0;
+
+  document.getElementById("winRate").innerText=wr+"%";
+
+  document.getElementById("rating").innerText=(wr/10).toFixed(1);
+}
+
+function exportData(){
+  let data=JSON.stringify(players);
+  let blob=new Blob([data],{type:"application/json"});
+  let url=URL.createObjectURL(blob);
+  let a=document.createElement("a");
+  a.href=url;
+  a.download="ml_coach_backup.json";
+  a.click();
+}
+
+function clearData(){
+  if(confirm("Reset semua data?")){
+    localStorage.clear();
+    location.reload();
+  }
+}
+
+render();
+update();
+show("dashboard");
+
+</script>
+
+</body>
+</html>
